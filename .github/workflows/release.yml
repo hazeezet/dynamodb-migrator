@@ -130,9 +130,9 @@ jobs:
           
           # Calculate hashes for all files in the artifacts directory
           find artifacts -type f -regex ".*\.\(zip\|msi\)" | sort | while read -r file; do
-            hash=$(sha256sum "$file" | awk '{print $1}')
+            hash=$(sha256sum "$file" | cut -d ' ' -f 1)
             filename=$(basename "$file")
-            echo "| \`$filename\` | \`$hash\` |" >> hash_summary.md
+            echo "| **$filename** | \`$hash\` |" >> hash_summary.md
           done
           
           # Store in env to pass to release action
