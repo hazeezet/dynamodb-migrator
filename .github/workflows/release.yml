@@ -102,7 +102,8 @@ jobs:
           # Generate MSI using WiX (native to Windows runners)
           cd rust_cli
           $version = (Get-Content Cargo.toml | Select-String "^version =" | ForEach-Object { $_.ToString().Split('"')[1] })
-          candle -arch x64 -dVersion=$version -out main.wixobj wix/main.wxs
+          Write-Host "Detected Version: $version"
+          candle -arch x64 "-dVersion=$version" -out main.wixobj wix/main.wxs
           light -out "../ddbm-${{ matrix.friendly_name }}.msi" main.wixobj
           cd ..
           $msiHash = (Get-FileHash "ddbm-${{ matrix.friendly_name }}.msi" -Algorithm SHA256).Hash.ToLower()
