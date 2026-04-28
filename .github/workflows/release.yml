@@ -85,7 +85,6 @@ jobs:
           cp scripts/uninstall.sh dist/uninstall
           chmod +x dist/install dist/uninstall
           zip -j ddbm-${{ matrix.friendly_name }}.zip dist/*
-          sha256sum ddbm-${{ matrix.friendly_name }}.zip > ddbm-${{ matrix.friendly_name }}.zip.sha256
 
       - name: Prepare artifacts (Windows)
         if: matrix.os == 'windows-latest'
@@ -96,8 +95,6 @@ jobs:
           Copy-Item "rust_cli/target/${{ matrix.target }}/release/${{ matrix.binary_name }}" dist/
           Copy-Item "rust_cli/target/${{ matrix.target }}/release/${{ matrix.alias_name }}" dist/
           Compress-Archive -Path dist/* -DestinationPath "ddbm-${{ matrix.friendly_name }}.zip"
-          $zipHash = (Get-FileHash "ddbm-${{ matrix.friendly_name }}.zip" -Algorithm SHA256).Hash.ToLower()
-          $zipHash | Out-File -FilePath "ddbm-${{ matrix.friendly_name }}.zip.sha256" -NoNewline -Encoding ascii
 
           # Generate MSI using WiX (native to Windows runners)
           cd rust_cli
@@ -105,17 +102,14 @@ jobs:
           Write-Host "Detected Version: $version"
           candle -arch x64 "-dVersion=$version" -out main.wixobj wix/main.wxs
           light -out "../ddbm-${{ matrix.friendly_name }}.msi" main.wixobj
-          cd ..
-          $msiHash = (Get-FileHash "ddbm-${{ matrix.friendly_name }}.msi" -Algorithm SHA256).Hash.ToLower()
-          $msiHash | Out-File -FilePath "ddbm-${{ matrix.friendly_name }}.msi.sha256" -NoNewline -Encoding ascii
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ddbm-${{ matrix.friendly_name }}
           path: |
-            ddbm-${{ matrix.friendly_name }}.zip*
-            ddbm-${{ matrix.friendly_name }}.msi*
+            ddbm-${{ matrix.friendly_name }}.zip
+            ddbm-${{ matrix.friendly_name }}.msi
 
   release:
     name: Create Release
@@ -133,11 +127,14 @@ jobs:
           echo "### Hashes:" >> hash_summary.md
           echo "| Filename | SHA256 |" >> hash_summary.md
           echo "| :--- | :--- |" >> hash_summary.md
-          find artifacts -name "*.sha256" | sort | while read -r file; do
-            hash=$(cat "$file")
-            filename=$(basename "$file" .sha256)
+          
+          # Calculate hashes for all files in the artifacts directory
+          find artifacts -type f -regex ".*\.\(zip\|msi\)" | sort | while read -r file; do
+            hash=$(sha256sum "$file" | awk '{print $1}')
+            filename=$(basename "$file")
             echo "| \`$filename\` | \`$hash\` |" >> hash_summary.md
           done
+          
           # Store in env to pass to release action
           echo "HASH_TABLE<<EOF" >> $GITHUB_ENV
           cat hash_summary.md >> $GITHUB_ENV
