@@ -1,192 +1,83 @@
-# DynamoDB Table Migration Tool
+# ddbm — DynamoDB Migration Tool
 
-A powerful tool for migrating data from one DynamoDB table to another with advanced template transformations, state management, and rollback capabilities.
+A powerful, high-performance tool for migrating data between DynamoDB tables with advanced template transformations, atomic state management, and full rollback capabilities.
 
-## Features
+Available as both a **cross-platform Rust CLI** (optimized for speed) and a **Python implementation** (optimized for flexibility).
 
-- **Table-to-Table Migration**: Migrate data between DynamoDB tables
-- **Advanced Template System**: Transform data during migration with built-in functions
-- **State Management**: Resume interrupted migrations
-- **Rollback Support**: Undo migrations if needed
-- **Batch Processing**: Efficient handling of large datasets
-- **Interactive CLI**: Easy-to-use command-line interface
+## Core Features
 
-## Prerequisites
+- **Interchangeable State** — The migration state (`migration_state.json`) and undo logs (`undo_state.json`) are fully compatible between the Python and Rust versions.
+- **Atomic Rollback** — Every migration generates an undo log, allowing you to revert changes in the target table safely.
+- **Resumable Jobs** — Interrupted migrations can be resumed from the exact last evaluated key.
+- **Template Engine** — Powerful DSL for renaming columns and transforming data in-flight.
 
-- Python 3.7+
-- AWS CLI configured
-- Required packages: `boto3`
+---
 
-```bash
-pip install boto3
-```
+## 🛠 The Transformation Engine
 
-## Quick Start
+Both implementations use the same template syntax for mapping source columns to target columns.
 
-1. **Run the migration tool**:
-```bash
-python index.py
-```
+### Basic Syntax
+Templates are defined as strings with placeholders: `"{column_name} {transformation}"`.
 
-2. **Choose your action**:
-   - Start new migration (table to table)
-   - Resume existing migration
-   - Undo previous migration
+### Available Transformations
 
-3. **For new migration, provide**:
-   - Source DynamoDB table name
-   - Target DynamoDB table name
-   - Column mappings with optional transformations
+#### String Operations
+| Operation | Example | Result |
+|---|---|---|
+| `upper` | `{name upper}` | `JOHN DOE` |
+| `lower` | `{email lower}` | `john@example.com` |
+| `title` | `{name title}` | `John Doe` |
+| `strip` | `{text strip}` | Removes whitespace |
+| `substring` | `{id substring 0 5}` | First 5 characters |
+| `replace` | `{key replace _ -}` | Replaces `_` with `-` |
 
-## Column Mapping & Transformations
+#### Number Operations
+| Operation | Example | Result |
+|---|---|---|
+| `add` | `{count add 1}` | Increment value |
+| `multiply` | `{price multiply 1.1}` | Add 10% tax |
+| `round_to` | `{val round_to 2}` | `10.55` |
+| `abs_value`| `{diff abs_value}` | Absolute value |
 
-The tool supports powerful template-based column mapping with transformations:
+---
 
-### Basic Mapping
-```json
-{
-  "target_column": "{source_column}"
-}
-```
+## 🚀 Getting Started
 
-### String Transformations
-```json
-{
-  "name_upper": "{name upper}",
-  "email_lower": "{email lower}",
-  "title_case": "{description title}",
-  "clean_text": "{text strip}",
-  "short_desc": "{description substring 0 50}",
-  "replaced_text": "{text replace old new}",
-  "padded_id": "{id pad_left 10 0}"
-}
-```
+### 1. Choose Your Implementation
 
-### Number Transformations
-```json
-{
-  "price_with_tax": "{price multiply 1.1}",
-  "age_next_year": "{age add 1}",
-  "discounted_price": "{original_price subtract 10}",
-  "half_value": "{value divide 2}",
-  "rounded_price": "{price round_to 2}",
-  "absolute_value": "{number abs_value}",
-  "squared": "{value power 2}"
-}
-```
+| Feature | Rust CLI (ddbm) | Python Script |
+|---|---|---|
+| **Best For** | Production, large datasets | Fast hacking, custom logic |
+| **Speed** | 🚀 Extremely Fast | Moderate |
+| **Install** | Binary or Cargo | Python + Boto3 |
+| **Commands** | `ddbm migrate` | `python run.py migrate` |
 
-### Available String Operations
-- `upper` - Convert to uppercase
-- `lower` - Convert to lowercase  
-- `title` - Convert to title case
-- `strip` - Remove whitespace
-- `replace old new` - Replace substring
-- `split ,` - Split into array
-- `substring 0 10` - Extract substring
-- `pad_left 10 0` - Pad on left
-- `pad_right 10 0` - Pad on right
+### 2. Get the Code
 
-### Available Number Operations
-- `add 5` - Add number
-- `subtract 3` - Subtract number
-- `multiply 2` - Multiply by number
-- `divide 4` - Divide by number
-- `round_to 2` - Round to decimals
-- `abs_value` - Absolute value
-- `power 2` - Raise to power
-- `sqrt` - Square root
-- `floor` - Floor value
-- `ceil` - Ceiling value
-- `mod 3` - Modulo operation
-
-## Usage Examples
-
-### Basic Migration
-```bash
-python index.py
-# Select: Start new migration
-# Enter source table: users-old
-# Enter target table: users-new
-# Configure column mappings
-```
-
-### Real-world Example
-Based on your migration state, here's how transformations work:
-
-```json
-{
-  "mainId": "MIGRATION#2025",
-  "sortId": "METADATA#20250824_135536#HELLO#{id}",
-  "id": "{id upper}",
-  "email_clean": "{email lower}",
-  "full_name": "{firstName} {lastName}",
-  "registration_year": "{year add 0}",
-  "tuition_with_fee": "{tuitionFee add 20}",
-  "grade_padded": "{grade pad_left 2 0}"
-}
-```
-
-## Testing Transformations
-
-Test the transformation system:
+You can clone the entire repository or use **sparse checkout** to get only what you need:
 
 ```bash
-python tests/transformations.py
+git clone --filter=blob:none --sparse https://github.com/hazeezet/dynamodb-migration.git
+cd dynamodb-migration
+
+# To get only the Rust CLI:
+git sparse-checkout set rust_cli
+
+# To get only the Python app:
+git sparse-checkout set python_app
 ```
 
-This will show you examples of all available transformations.
+### 3. Quick Links
 
-## Usage Examples
+- [**Rust CLI Documentation**](rust_cli/README.md) — How to install and run the binary.
+- [**Python App Documentation**](python_app/README.md) — How to set up venv and run the script.
 
-### Basic Migration
-```bash
-python index.py
-# Select: Start new migration
-# Enter source table: users-old
-# Enter target table: users-new
-# Configure column mappings if needed
-```
+---
 
-### Resume Migration
-```bash
-python index.py
-# Select: Manage existing migrations
-# Choose migration to resume
-```
+## 📦 Downloads
 
-### Undo Migration
-```bash
-python index.py
-# Select: Manage existing migrations
-# Choose migration to undo
-```
-
-## Configuration
-
-Default settings in `src/config.py`:
-- Batch size: 25 items
-- Max retries: 3
-- DynamoDB capacity: 5 read/write units
-
-## State Management
-
-The tool tracks migration progress and allows you to:
-- Resume interrupted migrations
-- View migration status
-- Rollback completed migrations
-- Delete migration states
-
-## Troubleshooting
-
-**Common Issues:**
-- AWS credentials: Run `aws configure`
-- Permissions: Ensure DynamoDB access
-- Table not found: Verify table names
-
-**Check logs:**
-```bash
-tail -f logs/migration_*.log
-```
+Pre-built binaries for Windows, Linux, and macOS are available in the [**Releases**](https://github.com/hazeezet/dynamodb-migration/releases) section.
 
 ---
 
