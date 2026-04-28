@@ -85,15 +85,36 @@ Download and install the latest version of `ddbm` for your system.
 
 | OS | Architecture | Install Command (Copy & Paste) |
 | :--- | :--- | :--- |
-| **Linux** | x86_64 | `curl -L https://github.com/hazeezet/dynamodb-migrator/releases/latest/download/ddbm-linux-x86_64.zip -o ddbm.zip && unzip ddbm.zip -d ddbm-install && sudo ./ddbm-install/install` |
-| **Linux** | ARM64 | `curl -L https://github.com/hazeezet/dynamodb-migrator/releases/latest/download/ddbm-linux-arm64.zip -o ddbm.zip && unzip ddbm.zip -d ddbm-install && sudo ./ddbm-install/install` |
-| **macOS** | Intel | `curl -L https://github.com/hazeezet/dynamodb-migrator/releases/latest/download/ddbm-macos-x86_64.zip -o ddbm.zip && unzip ddbm.zip -d ddbm-install && sudo ./ddbm-install/install` |
-| **macOS** | Apple Silicon | `curl -L https://github.com/hazeezet/dynamodb-migrator/releases/latest/download/ddbm-macos-arm64.zip -o ddbm.zip && unzip ddbm.zip -d ddbm-install && sudo ./ddbm-install/install` |
+| **Linux** | x86_64 | `curl -L https://github.com/hazeezet/dynamodb-migrator/releases/latest/download/ddbm-linux-x86_64.zip -o ddbm.zip && unzip ddbm.zip -d ddbm-cli && sudo ./ddbm-cli/install` |
+| **Linux** | ARM64 | `curl -L https://github.com/hazeezet/dynamodb-migrator/releases/latest/download/ddbm-linux-arm64.zip -o ddbm.zip && unzip ddbm.zip -d ddbm-cli && sudo ./ddbm-cli/install` |
+| **macOS** | Intel | `curl -L https://github.com/hazeezet/dynamodb-migrator/releases/latest/download/ddbm-macos-x86_64.zip -o ddbm.zip && unzip ddbm.zip -d ddbm-cli && sudo ./ddbm-cli/install` |
+| **macOS** | Apple Silicon | `curl -L https://github.com/hazeezet/dynamodb-migrator/releases/latest/download/ddbm-macos-arm64.zip -o ddbm.zip && unzip ddbm.zip -d ddbm-cli && sudo ./ddbm-cli/install` |
 
 **Windows**
 1. Download the latest `ddbm-windows-x86_64.msi` from the [**Releases**](https://github.com/hazeezet/dynamodb-migrator/releases) page.
 2. Run the `.msi` file and follow the on-screen instructions.
 3. Open a new terminal and verify with `ddbm --version`.
+
+---
+
+## 🗑 Uninstallation
+
+### Linux & macOS
+If you installed via the binary script:
+```bash
+sudo ./ddbm-cli/uninstall
+```
+
+### Windows
+1. Open **Settings** > **Apps** > **Installed Apps**.
+2. Search for **ddbm**.
+3. Click **Uninstall**.
+
+### Cargo
+If you installed via Cargo:
+```bash
+cargo uninstall ddbm
+```
 
 ---
 

@@ -15,7 +15,7 @@ use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, Env
 #[derive(Parser)]
 #[command(
     name = "ddbm",
-    version = "2.0.0",
+    version = env!("CARGO_PKG_VERSION"),
     about = "DynamoDB Migration Tool",
     long_about = "A powerful CLI for migrating data between DynamoDB tables with\n\
                    template transformations, state management, and rollback support.",

@@ -82,7 +82,8 @@ jobs:
           cp rust_cli/target/${{ matrix.target }}/release/${{ matrix.binary_name }} dist/
           cp rust_cli/target/${{ matrix.target }}/release/${{ matrix.alias_name }} dist/
           cp scripts/install.sh dist/install
-          chmod +x dist/install
+          cp scripts/uninstall.sh dist/uninstall
+          chmod +x dist/install dist/uninstall
           zip -j ddbm-${{ matrix.friendly_name }}.zip dist/*
           sha256sum ddbm-${{ matrix.friendly_name }}.zip > ddbm-${{ matrix.friendly_name }}.zip.sha256
 
@@ -100,7 +101,8 @@ jobs:
 
           # Generate MSI using WiX (native to Windows runners)
           cd rust_cli
-          candle -arch x64 -out main.wixobj wix/main.wxs
+          $version = (Get-Content Cargo.toml | Select-String "^version =" | ForEach-Object { $_.ToString().Split('"')[1] })
+          candle -arch x64 -dVersion=$version -out main.wixobj wix/main.wxs
           light -out "../ddbm-${{ matrix.friendly_name }}.msi" main.wixobj
           cd ..
           $msiHash = (Get-FileHash "ddbm-${{ matrix.friendly_name }}.msi" -Algorithm SHA256).Hash.ToLower()
@@ -124,8 +126,26 @@ jobs:
         with:
           path: artifacts
 
+      - name: Generate Hash Table
+        id: hash_table
+        run: |
+          echo "### Hashes:" >> hash_summary.md
+          echo "| Filename | SHA256 |" >> hash_summary.md
+          echo "| :--- | :--- |" >> hash_summary.md
+          find artifacts -name "*.sha256" | sort | while read -r file; do
+            hash=$(cat "$file")
+            filename=$(basename "$file" .sha256)
+            echo "| \`$filename\` | \`$hash\` |" >> hash_summary.md
+          done
+          # Store in env to pass to release action
+          echo "HASH_TABLE<<EOF" >> $GITHUB_ENV
+          cat hash_summary.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          body: |
+            ${{ env.HASH_TABLE }}
           files: artifacts/**/*
