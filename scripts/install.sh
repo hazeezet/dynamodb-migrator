@@ -14,19 +14,13 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}==>${NC} Installing ddbm..."
 
 # Check if binaries exist in the current directory
-if [[ ! -f "ddbm" ]] && [[ ! -f "ddbm.exe" ]]; then
-    echo "Error: ddbm binary not found in current directory."
+if [[ ! -f "ddbm" ]] || [[ ! -f "dynamodb-migrator" ]]; then
+    echo "Error: ddbm or dynamodb-migrator binary not found in current directory."
     exit 1
 fi
 
-# Determine binary names (handling .exe for Windows-style extraction if needed, though this is bash)
 BINARY="ddbm"
 ALIAS="dynamodb-migrator"
-
-if [[ -f "ddbm.exe" ]]; then
-    BINARY="ddbm.exe"
-    ALIAS="dynamodb-migrator.exe"
-fi
 
 # Move binaries
 echo -e "${BLUE}==>${NC} Moving binaries to ${INSTALL_DIR} (requires sudo)..."

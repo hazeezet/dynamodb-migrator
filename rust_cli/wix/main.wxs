@@ -26,10 +26,10 @@
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='ProgramFiles64Folder' Name='PFiles'>
                 <Directory Id='APPLICATIONROOTDIRECTORY' Name='ddbm'>
-                    <Component Id='ddbm_exe' Guid='9a8b7c6d-5e4f-3d2c-1b0a-9z8y7x6w5v4u' Win64='yes'>
+                    <Component Id='ddbm_exe' Guid='E72A2E8B-1E4F-4C8D-9E8F-5A6B7C8D9E0F' Win64='yes'>
                         <File Id='ddbm_exe' Source='target\release\ddbm.exe' KeyPath='yes' Checksum='yes'/>
                     </Component>
-                    <Component Id='migrator_exe' Guid='1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p' Win64='yes'>
+                    <Component Id='migrator_exe' Guid='F83B3F9C-2F5A-4D9E-AF0A-6B7C8D9E0F1A' Win64='yes'>
                         <File Id='migrator_exe' Source='target\release\dynamodb-migrator.exe' KeyPath='yes' Checksum='yes'/>
                     </Component>
                 </Directory>
@@ -43,7 +43,7 @@
         </Feature>
 
         <ComponentGroup Id='PathEnv'>
-            <Component Id='Path' Guid='2b3c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q' Directory='APPLICATIONROOTDIRECTORY' KeyPath='yes'>
+            <Component Id='Path' Guid='D6191D7A-0D3E-4B7C-8D7E-4A5B6C7D8E9F' Directory='APPLICATIONROOTDIRECTORY' KeyPath='yes'>
                 <Environment Id='PATH' Name='PATH' Value='[APPLICATIONROOTDIRECTORY]' Permanent='no' Part='last' Action='set' System='yes' />
             </Component>
         </ComponentGroup>
