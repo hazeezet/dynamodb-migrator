@@ -1,0 +1,66 @@
+[package]
+name = "ddbm"
+version = "2.0.0"
+edition = "2021"
+description = "A powerful CLI tool for migrating data between DynamoDB tables with template transformations, state management, and rollback support."
+license = "MIT"
+readme = "README.md"
+keywords = ["dynamodb", "migration", "aws", "cli"]
+categories = ["command-line-utilities", "database"]
+
+[lib]
+name = "ddbm"
+path = "app/lib.rs"
+
+[[bin]]
+name = "ddbm"
+path = "app/bin/ddbm.rs"
+
+[[bin]]
+name = "dynamodb-migrator"
+path = "app/bin/dynamodb_migrator.rs"
+
+[dependencies]
+# CLI framework
+clap = { version = "4", features = ["derive"] }
+
+# AWS SDK
+aws-sdk-dynamodb = "1"
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Interactive prompts
+dialoguer = { version = "0.11", features = ["fuzzy-select"] }
+console = "0.15"
+
+# Progress indication
+indicatif = "0.17"
+
+# Date/time
+chrono = "0.4"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+
+# Error handling
+anyhow = "1"
+
+# Template parsing
+regex = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[dev-dependencies]
+tempfile = "3"

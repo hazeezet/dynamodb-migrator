@@ -1,4 +1,4 @@
-# ddbm — DynamoDB Migration Tool
+# ddbm - DynamoDB Migration Tool
 
 A powerful, high-performance tool for migrating data between DynamoDB tables with advanced template transformations, atomic state management, and full rollback capabilities.
 
@@ -6,10 +6,10 @@ Available as both a **cross-platform Rust CLI** (optimized for speed) and a **Py
 
 ## Core Features
 
-- **Interchangeable State** — The migration state (`migration_state.json`) and undo logs (`undo_state.json`) are fully compatible between the Python and Rust versions.
-- **Atomic Rollback** — Every migration generates an undo log, allowing you to revert changes in the target table safely.
-- **Resumable Jobs** — Interrupted migrations can be resumed from the exact last evaluated key.
-- **Template Engine** — Powerful DSL for renaming columns and transforming data in-flight.
+- **Interchangeable State** - The migration state (`migration_state.json`) and undo logs (`undo_state.json`) are fully compatible between the Python and Rust versions.
+- **Atomic Rollback** - Every migration generates an undo log, allowing you to revert changes in the target table safely.
+- **Resumable Jobs** - Interrupted migrations can be resumed from the exact last evaluated key.
+- **Template Engine** - Powerful DSL for renaming columns and transforming data in-flight.
 
 ---
 
@@ -58,8 +58,8 @@ Templates are defined as strings with placeholders: `"{column_name} {transformat
 You can clone the entire repository or use **sparse checkout** to get only what you need:
 
 ```bash
-git clone --filter=blob:none --sparse https://github.com/hazeezet/dynamodb-migration.git
-cd dynamodb-migration
+git clone --filter=blob:none --sparse https://github.com/hazeezet/dynamodb-migrator.git
+cd dynamodb-migrator
 
 # To get only the Rust CLI:
 git sparse-checkout set rust_cli
@@ -70,14 +70,14 @@ git sparse-checkout set python_app
 
 ### 3. Quick Links
 
-- [**Rust CLI Documentation**](rust_cli/README.md) — How to install and run the binary.
-- [**Python App Documentation**](python_app/README.md) — How to set up venv and run the script.
+- [**Rust CLI Documentation**](rust_cli/README.md) - How to install and run the binary.
+- [**Python App Documentation**](python_app/README.md) - How to set up venv and run the script.
 
 ---
 
 ## 📦 Downloads
 
-Pre-built binaries for Windows, Linux, and macOS are available in the [**Releases**](https://github.com/hazeezet/dynamodb-migration/releases) section.
+Pre-built binaries for Windows, Linux, and macOS are available in the [**Releases**](https://github.com/hazeezet/dynamodb-migrator/releases) section.
 
 ---
 

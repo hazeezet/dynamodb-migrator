@@ -1,12 +1,27 @@
-.vscode
-*.json
+# === IDE / Editor ===
+.vscode/
+.idea/
+
+# === Python ===
+python_app/environment/
+python_app/env/
+python_app/venv/
+python_app/*.venv
+python_app/*.env
+python_app/__pycache__/
+python_app/**/*.pyc
+python_app/**/*.pyo
+python_app/**/*.pyd
+
+# === Rust ===
+rust_cli/target/
+rust_cli/Cargo.lock
+
+# === State & Logs ===
 *.log
-environment
-env
-*.env
-venv
-*.venv
-__pycache__
-*.pyc
-*.pyo
-*.pyd
+migration_state.json
+undo_state.json
+
+# === OS ===
+.DS_Store
+Thumbs.db
