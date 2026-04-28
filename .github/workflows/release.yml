@@ -18,27 +18,38 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            archive: tar.gz
+            archive: zip
             binary_name: ddbm
             alias_name: dynamodb-migrator
+            friendly_name: linux-x86_64
+
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive: zip
+            binary_name: ddbm
+            alias_name: dynamodb-migrator
+            friendly_name: linux-arm64
 
           - target: x86_64-apple-darwin
             os: macos-latest
-            archive: tar.gz
+            archive: zip
             binary_name: ddbm
             alias_name: dynamodb-migrator
+            friendly_name: macos-x86_64
 
           - target: aarch64-apple-darwin
             os: macos-latest
-            archive: tar.gz
+            archive: zip
             binary_name: ddbm
             alias_name: dynamodb-migrator
+            friendly_name: macos-arm64
 
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             archive: zip
             binary_name: ddbm.exe
             alias_name: dynamodb-migrator.exe
+            friendly_name: windows-x86_64
 
     steps:
       - name: Checkout code
@@ -59,23 +70,38 @@ jobs:
           mkdir -p dist
           cp rust_cli/target/${{ matrix.target }}/release/${{ matrix.binary_name }} dist/
           cp rust_cli/target/${{ matrix.target }}/release/${{ matrix.alias_name }} dist/
-          cd dist
-          tar czf ../ddbm-${{ matrix.target }}.tar.gz *
+          cp scripts/install.sh dist/install
+          chmod +x dist/install
+          zip -j ddbm-${{ matrix.friendly_name }}.zip dist/*
+          sha256sum ddbm-${{ matrix.friendly_name }}.zip > ddbm-${{ matrix.friendly_name }}.zip.sha256
 
       - name: Prepare artifacts (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
+          # Create ZIP archive as before
           New-Item -ItemType Directory -Force -Path dist
           Copy-Item "rust_cli/target/${{ matrix.target }}/release/${{ matrix.binary_name }}" dist/
           Copy-Item "rust_cli/target/${{ matrix.target }}/release/${{ matrix.alias_name }}" dist/
-          Compress-Archive -Path dist/* -DestinationPath "ddbm-${{ matrix.target }}.zip"
+          Compress-Archive -Path dist/* -DestinationPath "ddbm-${{ matrix.friendly_name }}.zip"
+          $zipHash = (Get-FileHash "ddbm-${{ matrix.friendly_name }}.zip" -Algorithm SHA256).Hash.ToLower()
+          $zipHash | Out-File -FilePath "ddbm-${{ matrix.friendly_name }}.zip.sha256" -NoNewline -Encoding ascii
+
+          # Generate MSI using WiX (native to Windows runners)
+          cd rust_cli
+          candle -arch x64 -out main.wixobj wix/main.wxs
+          light -out "../ddbm-${{ matrix.friendly_name }}.msi" main.wixobj
+          cd ..
+          $msiHash = (Get-FileHash "ddbm-${{ matrix.friendly_name }}.msi" -Algorithm SHA256).Hash.ToLower()
+          $msiHash | Out-File -FilePath "ddbm-${{ matrix.friendly_name }}.msi.sha256" -NoNewline -Encoding ascii
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ddbm-${{ matrix.target }}
-          path: ddbm-${{ matrix.target }}.${{ matrix.archive }}
+          name: ddbm-${{ matrix.friendly_name }}
+          path: |
+            ddbm-${{ matrix.friendly_name }}.zip*
+            ddbm-${{ matrix.friendly_name }}.msi*
 
   release:
     name: Create Release

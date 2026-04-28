@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+    <Product Id='*' 
+             Name='ddbm - DynamoDB Migration Tool' 
+             UpgradeCode='8d6f51c0-1b2d-4e9a-9e8c-5a6b7c8d9e0f' 
+             Manufacturer='hazeezet' 
+             Language='1033' 
+             Codepage='1252' 
+             Version='2.0.0'>
+             
+        <Package Id='*' 
+                 Keywords='Installer' 
+                 Description='DynamoDB Migration Tool' 
+                 Comments='A powerful CLI for migrating data between DynamoDB tables' 
+                 Manufacturer='hazeezet' 
+                 InstallerVersion='450' 
+                 Languages='1033' 
+                 Compressed='yes' 
+                 SummaryCodepage='1252' />
+
+        <MajorUpgrade Schedule='afterInstallInitialize' 
+                      DowngradeErrorMessage='A newer version of dynamodb migrator is already installed.' />
+
+        <Media Id='1' Cabinet='app.cab' EmbedCab='yes' />
+
+        <Directory Id='TARGETDIR' Name='SourceDir'>
+            <Directory Id='ProgramFiles64Folder' Name='PFiles'>
+                <Directory Id='APPLICATIONROOTDIRECTORY' Name='ddbm'>
+                    <Component Id='ddbm_exe' Guid='9a8b7c6d-5e4f-3d2c-1b0a-9z8y7x6w5v4u' Win64='yes'>
+                        <File Id='ddbm_exe' Source='target\release\ddbm.exe' KeyPath='yes' Checksum='yes'/>
+                    </Component>
+                    <Component Id='migrator_exe' Guid='1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p' Win64='yes'>
+                        <File Id='migrator_exe' Source='target\release\dynamodb-migrator.exe' KeyPath='yes' Checksum='yes'/>
+                    </Component>
+                </Directory>
+            </Directory>
+        </Directory>
+
+        <Feature Id='MainApplication' Title='Main Application' Level='1'>
+            <ComponentRef Id='ddbm_exe' />
+            <ComponentRef Id='migrator_exe' />
+            <ComponentGroupRef Id='PathEnv' />
+        </Feature>
+
+        <ComponentGroup Id='PathEnv'>
+            <Component Id='Path' Guid='2b3c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q' Directory='APPLICATIONROOTDIRECTORY' KeyPath='yes'>
+                <Environment Id='PATH' Name='PATH' Value='[APPLICATIONROOTDIRECTORY]' Permanent='no' Part='last' Action='set' System='yes' />
+            </Component>
+        </ComponentGroup>
+
+    </Product>
+</Wix>

@@ -19,14 +19,17 @@ Installs both `ddbm` and `dynamodb-migrator` binaries to your system:
 cargo install --path .
 ```
 
-### 3. Uninstalling
+### 3. Pre-built Binaries
+Alternatively, download and extract the binaries from the [Releases](https://github.com/hazeezet/dynamodb-migrator/releases) as described in the [Root README](../README.md#installation-from-binary).
+
+### 4. Uninstalling
 This will remove both `ddbm` and `dynamodb-migrator` binaries:
 ```bash
 cargo uninstall ddbm
 cargo uninstall dynamodb-migrator
 ```
 
-### 4. Cleaning Build Files
+### 5. Cleaning Build Files
 To remove the local `target/` directory and build artifacts:
 ```bash
 cargo clean
