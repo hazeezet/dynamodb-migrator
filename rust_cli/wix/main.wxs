@@ -27,10 +27,10 @@
             <Directory Id='ProgramFiles64Folder' Name='PFiles'>
                 <Directory Id='APPLICATIONROOTDIRECTORY' Name='ddbm'>
                     <Component Id='ddbm_exe' Guid='E72A2E8B-1E4F-4C8D-9E8F-5A6B7C8D9E0F' Win64='yes'>
-                        <File Id='ddbm_exe' Source='target\release\ddbm.exe' KeyPath='yes' Checksum='yes'/>
+                        <File Id='ddbm_exe' Source='..\dist\ddbm.exe' KeyPath='yes' Checksum='yes'/>
                     </Component>
                     <Component Id='migrator_exe' Guid='F83B3F9C-2F5A-4D9E-AF0A-6B7C8D9E0F1A' Win64='yes'>
-                        <File Id='migrator_exe' Source='target\release\dynamodb-migrator.exe' KeyPath='yes' Checksum='yes'/>
+                        <File Id='migrator_exe' Source='..\dist\dynamodb-migrator.exe' KeyPath='yes' Checksum='yes'/>
                     </Component>
                 </Directory>
             </Directory>
