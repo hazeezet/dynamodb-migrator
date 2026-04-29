@@ -122,6 +122,26 @@ cargo uninstall ddbm
 
 ---
 
+## Testing
+
+We maintain high quality standards with automated tests for both implementations.
+
+### Rust CLI Tests
+```bash
+cd rust_cli
+cargo test
+```
+
+### Python App Tests
+Requires dependencies:
+```bash
+cd python_app
+pip install -r requirements.txt
+pytest tests/
+```
+
+---
+
 ## Contributing
 
 Contributions are welcome! Whether it's reporting a bug, suggesting a feature, or submitting a pull request, we appreciate your help.

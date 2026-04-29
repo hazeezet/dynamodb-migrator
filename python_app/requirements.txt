@@ -1,0 +1,8 @@
+# Core Dependencies
+boto3>=1.26.0
+serde-json-python>=0.1.0
+
+# Testing & Linting
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0

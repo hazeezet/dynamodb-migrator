@@ -12,8 +12,38 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  validate:
+    name: Validate Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          
+      - name: Rust Checks
+        working-directory: rust_cli
+        run: |
+          cargo fmt --all --check
+          cargo clippy -- -D warnings
+          cargo test
+          
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Python Checks
+        working-directory: python_app
+        run: |
+          pip install -r requirements.txt
+          pytest tests/
+
   build:
     name: Build ${{ matrix.target }}
+    needs: validate
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

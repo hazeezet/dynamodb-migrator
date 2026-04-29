@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  rust-checks:
+    name: Rust Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "rust_cli -> target"
+
+      - name: Check Formatting
+        working-directory: rust_cli
+        run: cargo fmt --all --check
+
+      - name: Run Clippy
+        working-directory: rust_cli
+        run: cargo clippy -- -D warnings
+
+      - name: Run Tests
+        working-directory: rust_cli
+        run: cargo test
+
+  python-checks:
+    name: Python Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        working-directory: python_app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with black
+        working-directory: python_app
+        run: black --check .
+
+      - name: Lint with flake8
+        working-directory: python_app
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run Tests
+        working-directory: python_app
+        run: pytest tests/

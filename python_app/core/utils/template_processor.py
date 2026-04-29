@@ -95,28 +95,3 @@ def _format_value(value):
     else:
         return str(value)
 
-# Tests
-def test_validator():
-    # Success cases
-    assert validate_template("{name upper}") is True
-    assert validate_template("{age add 10}") is True
-    assert validate_template("USER#{id upper}") is True
-    
-    # Failure cases
-    try:
-        validate_template("{name upper something}")
-        assert False, "Should have failed: too many args"
-    except ValueError as e:
-        assert "exactly 0 arguments" in str(e)
-        
-    try:
-        validate_template("{age add 10 20}")
-        assert False, "Should have failed: too many args"
-    except ValueError as e:
-        assert "exactly 1 argument" in str(e)
-
-    try:
-        validate_template("{id magic}")
-        assert False, "Should have failed: unknown op"
-    except ValueError as e:
-        assert "Unknown transformation" in str(e)
