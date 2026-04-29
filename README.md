@@ -1,5 +1,9 @@
 # ddbm - DynamoDB Migration Tool
 
+![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![Version](https://img.shields.io/github/v/release/hazeezet/dynamodb-migrator?label=CLI%20Version&color=blue)
+![Build](https://img.shields.io/github/actions/workflow/status/hazeezet/dynamodb-migrator/release.yml?branch=main&label=Build)
+
 A powerful, high-performance tool for migrating data between DynamoDB tables with advanced template transformations, atomic state management, and full rollback capabilities.
 
 Available as both a **cross-platform Rust CLI** (optimized for speed) and a **Python implementation** (optimized for flexibility).
@@ -13,7 +17,7 @@ Available as both a **cross-platform Rust CLI** (optimized for speed) and a **Py
 
 ---
 
-## 🛠 The Transformation Engine
+## Transformation Engine
 
 Both implementations use the same template syntax for mapping source columns to target columns.
 
@@ -42,7 +46,7 @@ Templates are defined as strings with placeholders: `"{column_name} {transformat
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Choose Your Implementation
 
@@ -75,11 +79,11 @@ git sparse-checkout set python_app
 
 ---
 
-## 📦 Downloads
+## Downloads
 
 Pre-built binaries for Windows, Linux, and macOS are available in the [**Releases**](https://github.com/hazeezet/dynamodb-migrator/releases) section.
 
-### ⚡️ Quick Install (Binary)
+### Quick Install (Binary)
 
 Download and install the latest version of `ddbm` for your system.
 
@@ -97,7 +101,7 @@ Download and install the latest version of `ddbm` for your system.
 
 ---
 
-## 🗑 Uninstallation
+## Uninstallation
 
 ### Linux & macOS
 If you installed via the binary script:

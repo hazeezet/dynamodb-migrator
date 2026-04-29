@@ -20,7 +20,7 @@ cargo install --path .
 ```
 
 ### 3. Pre-built Binaries
-Alternatively, download and extract the binaries from the [Releases](https://github.com/hazeezet/dynamodb-migrator/releases) as described in the [Root README](../README.md#installation-from-binary).
+Alternatively, download and extract the binaries from the [Releases](https://github.com/hazeezet/dynamodb-migrator/releases) as described in the [Root README](../README.md#downloads).
 
 ### 4. Uninstalling
 This will remove both `ddbm` and `dynamodb-migrator` binaries:
@@ -51,11 +51,11 @@ The CLI is invoked via the `ddbm` command.
 ddbm migrate
 
 # Non-interactive clone
-ddbm ddbm migrate -s source-table -t target-table --passthrough
+ddbm migrate -s source-table -t target-table --passthrough
 ```
 
 ## Reference
-- **Transformations**: For details on mapping syntax, see the [Root README](../README.md#the-transformation-engine).
+- **Transformations**: For details on mapping syntax, see the [Root README](../README.md#transformation-engine).
 - **Internal Structure**: For documentation on the Rust modules, see [app/README.md](app/README.md).
 
 ## Performance Features

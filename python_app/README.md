@@ -40,7 +40,7 @@ python run.py migrate --source UsersOld --target UsersNew --passthrough
 ```
 
 ## Reference
-- **Transformations**: For details on the `{placeholder}` syntax and available functions, see the [Root README](../README.md#the-transformation-engine).
+- **Transformations**: For details on the `{placeholder}` syntax and available functions, see the [Root README](../README.md#transformation-engine).
 - **Core Logic**: For internal module documentation, see [core/README.md](core/README.md).
 
 ## Implementation Details
