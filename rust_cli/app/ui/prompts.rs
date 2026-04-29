@@ -145,14 +145,8 @@ pub fn get_migration_input() -> Result<(String, String, HashMap<String, Value>)>
         }
     } else {
         // Specific mappings
-        println!(
-            "  {}",
-            style("Format: target_column=template").dim()
-        );
-        println!(
-            "  {}",
-            style("Examples:").dim()
-        );
+        println!("  {}", style("Format: target_column=template").dim());
+        println!("  {}", style("Examples:").dim());
         println!(
             "    {}  {}",
             style("name={first} {last}").cyan(),
@@ -207,13 +201,9 @@ pub fn get_migration_input() -> Result<(String, String, HashMap<String, Value>)>
             }
 
             // Robust validation
-            use crate::app::transform::template::validate_template;
+            use crate::transform::template::validate_template;
             if let Err(e) = validate_template(template) {
-                println!(
-                    "  {} {}",
-                    style("Invalid template:").red(),
-                    style(e).red()
-                );
+                println!("  {} {}", style("Invalid template:").red(), style(e).red());
                 continue;
             }
 

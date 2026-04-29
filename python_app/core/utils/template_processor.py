@@ -1,6 +1,5 @@
 import re
 import numbers
-import logging
 from .logger import get_logger
 from .transformations import apply_transformation, TransformationError
 
@@ -29,21 +28,13 @@ def validate_template(template):
     return True
 
 def _validate_operation(op, args):
-    """Verify operation and argument counts."""
-    # Define registry: op_name -> (min_args, max_args)
-    registry = {
-        "upper": (0, 0), "lower": (0, 0), "title": (0, 0), "strip": (0, 0),
-        "abs_value": (0, 0), "sqrt": (0, 0), "floor": (0, 0), "ceil": (0, 0),
-        "split": (1, 1), "add": (1, 1), "subtract": (1, 1), "multiply": (1, 1),
-        "divide": (1, 1), "power": (1, 1), "mod": (1, 1), "round_to": (1, 1),
-        "replace": (2, 2), "substring": (1, 2), "pad_left": (1, 2), "pad_right": (1, 2),
-        "join": (1, 1)
-    }
+    """Verify operation and argument counts using the central REGISTRY."""
+    from .transformations import REGISTRY
     
-    if op not in registry:
+    if op not in REGISTRY:
         raise ValueError(f"Unknown transformation: '{op}'")
     
-    min_args, max_args = registry[op]
+    _, min_args, max_args, _ = REGISTRY[op]
     if len(args) < min_args or len(args) > max_args:
         if min_args == max_args:
             raise ValueError(f"Transformation '{op}' expects exactly {min_args} arguments, but got {len(args)}")
@@ -116,7 +107,7 @@ def test_validator():
         validate_template("{name upper something}")
         assert False, "Should have failed: too many args"
     except ValueError as e:
-        assert "expects 0 arguments" in str(e)
+        assert "exactly 0 arguments" in str(e)
         
     try:
         validate_template("{age add 10 20}")

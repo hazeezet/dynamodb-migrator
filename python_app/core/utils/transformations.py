@@ -127,97 +127,89 @@ class NumberTransformations:
         return float(value) % float(divisor)
 
 
+# Registry of all supported transformations.
+# This is the SINGLE SOURCE OF TRUTH for the entire application.
+# Format: "name": (function_ref, min_args, max_args, category)
+REGISTRY = {
+    # String operations
+    "upper": (StringTransformations.upper, 0, 0, "string"),
+    "lower": (StringTransformations.lower, 0, 0, "string"),
+    "title": (StringTransformations.title, 0, 0, "string"),
+    "strip": (StringTransformations.strip, 0, 0, "string"),
+    "replace": (StringTransformations.replace, 2, 2, "string"),
+    "split": (StringTransformations.split, 0, 1, "string"),
+    "join": (StringTransformations.join, 0, 1, "string"),
+    "substring": (StringTransformations.substring, 1, 2, "string"),
+    "pad_left": (StringTransformations.pad_left, 1, 2, "string"),
+    "pad_right": (StringTransformations.pad_right, 1, 2, "string"),
+    
+    # Number operations
+    "add": (NumberTransformations.add, 1, 1, "number"),
+    "subtract": (NumberTransformations.subtract, 1, 1, "number"),
+    "multiply": (NumberTransformations.multiply, 1, 1, "number"),
+    "divide": (NumberTransformations.divide, 1, 1, "number"),
+    "round_to": (NumberTransformations.round_to, 0, 1, "number"),
+    "abs_value": (NumberTransformations.abs_value, 0, 0, "number"),
+    "power": (NumberTransformations.power, 1, 1, "number"),
+    "sqrt": (NumberTransformations.sqrt, 0, 0, "number"),
+    "floor": (NumberTransformations.floor, 0, 0, "number"),
+    "ceil": (NumberTransformations.ceil, 0, 0, "number"),
+    "mod": (NumberTransformations.mod, 1, 1, "number"),
+}
+
+
 class TransformationProcessor:
-    """Main processor for applying transformations."""
+    """
+    Main processor for applying transformations using the central REGISTRY.
     
-    def __init__(self):
-        self.string_ops = StringTransformations()
-        self.number_ops = NumberTransformations()
+    This class handles the dispatching of transformation calls based on the
+    rules defined in the global REGISTRY.
+    """
     
-    def apply_transformation(self, value: Any, transformation: str) -> Any:
+    def apply_transformation(self, value: Any, transformation_str: str) -> Any:
         """
-        Apply transformation to value.
+        Apply a transformation to a value using the registry rules.
         
-        Transformation format examples:
-        - "upper" -> apply upper()
-        - "add 5" -> apply add(5)
-        - "replace old new" -> apply replace("old", "new")
-        - "substring 0 5" -> apply substring(0, 5)
+        Args:
+            value: The input value to transform.
+            transformation_str: The full transformation string (e.g. 'add 5').
+            
+        Returns:
+            The transformed value.
+            
+        Raises:
+            TransformationError: If the operation is unknown or args are invalid.
         """
-        if not transformation or not transformation.strip():
+        if not transformation_str or not transformation_str.strip():
             return value
         
-        parts = transformation.strip().split()
-        operation = parts[0].lower()
-        args = parts[1:] if len(parts) > 1 else []
+        parts = transformation_str.strip().split()
+        op_name = parts[0].lower()
+        args = parts[1:]
         
-        try:
-            # Determine if value is numeric
-            is_numeric = isinstance(value, (int, float)) or (
-                isinstance(value, str) and self._is_numeric_string(value)
+        if op_name not in REGISTRY:
+            raise TransformationError(f"Unknown transformation: {op_name}")
+            
+        func, min_args, max_args, category = REGISTRY[op_name]
+        
+        # Argument count validation (Double-check at runtime)
+        if len(args) < min_args or len(args) > max_args:
+            raise TransformationError(
+                f"Transformation '{op_name}' expects {min_args}-{max_args} args, got {len(args)}"
             )
             
-            # String transformations
-            if hasattr(self.string_ops, operation):
-                return self._apply_string_operation(value, operation, args)
-            
-            # Number transformations
-            elif hasattr(self.number_ops, operation) and is_numeric:
-                return self._apply_number_operation(value, operation, args)
-            
+        try:
+            # Automatic numeric conversion based on Registry Category
+            if category == "number":
+                # For numeric ops, ensure the input and args are treated as floats
+                val = float(value) if value is not None and str(value).lower() != 'null' else 0
+                return func(val, *[float(a) for a in args])
             else:
-                raise TransformationError(f"Unknown transformation: {operation}")
+                # String operations use the value as-is (converted to string by the methods)
+                return func(value, *args)
                 
         except Exception as e:
-            raise TransformationError(f"Error applying transformation '{transformation}' to value '{value}': {str(e)}")
-    
-    def _is_numeric_string(self, value: str) -> bool:
-        """Check if string represents a number."""
-        try:
-            float(value)
-            return True
-        except (ValueError, TypeError):
-            return False
-    
-    def _apply_string_operation(self, value: Any, operation: str, args: list) -> Any:
-        """Apply string operation with arguments."""
-        method = getattr(self.string_ops, operation)
-        
-        # Convert args to appropriate types based on operation
-        if operation == "replace" and len(args) >= 2:
-            return method(value, args[0], args[1])
-        elif operation == "split":
-            delimiter = args[0] if args else ','
-            return method(value, delimiter)
-        elif operation == "join":
-            delimiter = args[0] if args else ','
-            return method(value, delimiter)
-        elif operation == "substring":
-            start = int(args[0]) if args else 0
-            end = int(args[1]) if len(args) > 1 else None
-            return method(value, start, end)
-        elif operation in ["pad_left", "pad_right"]:
-            width = int(args[0]) if args else 10
-            fillchar = args[1] if len(args) > 1 else '0'
-            return method(value, width, fillchar)
-        else:
-            return method(value)
-    
-    def _apply_number_operation(self, value: Any, operation: str, args: list) -> Any:
-        """Apply number operation with arguments."""
-        method = getattr(self.number_ops, operation)
-        numeric_value = float(value) if not isinstance(value, (int, float)) else value
-        
-        if operation in ["add", "subtract", "multiply", "divide", "power", "mod"]:
-            if not args:
-                raise TransformationError(f"Operation '{operation}' requires an argument")
-            arg_value = float(args[0])
-            return method(numeric_value, arg_value)
-        elif operation == "round_to":
-            decimals = int(args[0]) if args else 0
-            return method(numeric_value, decimals)
-        else:
-            return method(numeric_value)
+            raise TransformationError(f"Error executing '{op_name}': {str(e)}")
 
 
 # Global processor instance
@@ -225,14 +217,4 @@ transformation_processor = TransformationProcessor()
 
 
 def apply_transformation(value: Any, transformation: str) -> Any:
-    """
-    Convenience function to apply transformation.
-    
-    Args:
-        value: The value to transform
-        transformation: The transformation string (e.g., "upper", "add 5")
-    
-    Returns:
-        Transformed value
-    """
     return transformation_processor.apply_transformation(value, transformation)

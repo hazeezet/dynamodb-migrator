@@ -1,6 +1,101 @@
+/// Template processor for column mapping transformations.
+use anyhow::{anyhow, Result};
+use regex::Regex;
+use serde_json::Value;
+use std::str::FromStr;
+use tracing::debug;
+
+use super::{number_ops, string_ops};
+
+/// Supported transformations in the system.
+/// Adding a variant here forces you to update all match blocks!
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Transformation {
+    Upper,
+    Lower,
+    Title,
+    Strip,
+    Replace,
+    Split,
+    Substring,
+    PadLeft,
+    PadRight,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    RoundTo,
+    AbsValue,
+    Power,
+    Sqrt,
+    Floor,
+    Ceil,
+    Mod,
+}
+
+impl FromStr for Transformation {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s.to_lowercase().as_str() {
+            "upper" => Ok(Transformation::Upper),
+            "lower" => Ok(Transformation::Lower),
+            "title" => Ok(Transformation::Title),
+            "strip" => Ok(Transformation::Strip),
+            "replace" => Ok(Transformation::Replace),
+            "split" => Ok(Transformation::Split),
+            "substring" => Ok(Transformation::Substring),
+            "pad_left" => Ok(Transformation::PadLeft),
+            "pad_right" => Ok(Transformation::PadRight),
+            "add" => Ok(Transformation::Add),
+            "subtract" => Ok(Transformation::Subtract),
+            "multiply" => Ok(Transformation::Multiply),
+            "divide" => Ok(Transformation::Divide),
+            "round_to" => Ok(Transformation::RoundTo),
+            "abs_value" => Ok(Transformation::AbsValue),
+            "power" => Ok(Transformation::Power),
+            "sqrt" => Ok(Transformation::Sqrt),
+            "floor" => Ok(Transformation::Floor),
+            "ceil" => Ok(Transformation::Ceil),
+            "mod" => Ok(Transformation::Mod),
+            _ => Err(anyhow!("Unknown transformation: '{}'", s)),
+        }
+    }
+}
+
+impl Transformation {
+    /// Returns (min_args, max_args) for this transformation.
+    pub fn arg_range(&self) -> (usize, usize) {
+        match self {
+            Transformation::Upper
+            | Transformation::Lower
+            | Transformation::Title
+            | Transformation::Strip
+            | Transformation::AbsValue
+            | Transformation::Sqrt
+            | Transformation::Floor
+            | Transformation::Ceil => (0, 0),
+
+            Transformation::Split
+            | Transformation::Add
+            | Transformation::Subtract
+            | Transformation::Multiply
+            | Transformation::Divide
+            | Transformation::Power
+            | Transformation::Mod
+            | Transformation::RoundTo => (1, 1),
+
+            Transformation::Replace => (2, 2),
+
+            Transformation::Substring | Transformation::PadLeft | Transformation::PadRight => {
+                (1, 2)
+            }
+        }
+    }
+}
+
 /// Apply a template string against a source item.
 pub fn apply_template(template: &str, item: &serde_json::Map<String, Value>) -> Result<String> {
-    // First validate the template structure
     validate_template(template)?;
 
     let template_regex = Regex::new(r"\{([^}]+)\}").expect("invalid regex");
@@ -20,8 +115,8 @@ pub fn apply_template(template: &str, item: &serde_json::Map<String, Value>) -> 
 
         let raw_value = item.get(field_name).cloned().unwrap_or(Value::Null);
 
-        let transformed = if let Some(transformation_name) = transformation {
-            apply_transformation(&raw_value, transformation_name)?
+        let transformed = if let Some(transformation_str) = transformation {
+            apply_transformation(&raw_value, transformation_str)?
         } else {
             format_value(&raw_value)
         };
@@ -34,22 +129,23 @@ pub fn apply_template(template: &str, item: &serde_json::Map<String, Value>) -> 
 
 /// Validate a template string for syntax and transformation rules.
 pub fn validate_template(template: &str) -> Result<()> {
-    // 1. Basic balanced bracket check
     let open_count = template.chars().filter(|&c| c == '{').count();
     let close_count = template.chars().filter(|&c| c == '}').count();
     if open_count != close_count {
-        return Err(anyhow!("Brackets are not balanced. Ensure every '{{' has a closing '}}'."));
+        return Err(anyhow!(
+            "Brackets are not balanced. Ensure every '{{' has a closing '}}'."
+        ));
     }
 
     let template_regex = Regex::new(r"\{([^}]+)\}").expect("invalid regex");
     for template_match in template_regex.captures_iter(template) {
         let content = template_match.get(1).unwrap().as_str().trim();
         let parts: Vec<&str> = content.split_whitespace().collect();
-        
+
         if parts.len() > 1 {
-            let op = parts[1].to_lowercase();
+            let op_str = parts[1];
             let args = &parts[2..];
-            validate_operation(&op, args)?;
+            validate_operation(op_str, args)?;
         }
     }
 
@@ -57,137 +153,137 @@ pub fn validate_template(template: &str) -> Result<()> {
 }
 
 /// Verify that an operation is supported and has the correct number of arguments.
-fn validate_operation(op: &str, args: &[&str]) -> Result<()> {
-    match op {
-        // String operations
-        "upper" | "lower" | "title" | "strip" | "abs_value" | "sqrt" | "floor" | "ceil" => {
-            if !args.is_empty() {
-                return Err(anyhow!("Transformation '{}' expects 0 arguments, but got {}", op, args.len()));
-            }
+fn validate_operation(op_str: &str, args: &[&str]) -> Result<()> {
+    // Parsing into the Enum ensures the name is valid
+    let op = Transformation::from_str(op_str)?;
+    let (min, max) = op.arg_range();
+
+    if args.len() < min || args.len() > max {
+        if min == max {
+            return Err(anyhow!(
+                "Transformation '{}' expects exactly {} arguments, but got {}",
+                op_str,
+                min,
+                args.len()
+            ));
+        } else {
+            return Err(anyhow!(
+                "Transformation '{}' expects {}-{} arguments, but got {}",
+                op_str,
+                min,
+                max,
+                args.len()
+            ));
         }
-        "split" | "add" | "subtract" | "multiply" | "divide" | "power" | "mod" | "round_to" => {
-            if args.len() != 1 {
-                return Err(anyhow!("Transformation '{}' expects exactly 1 argument, but got {}", op, args.len()));
-            }
-        }
-        "replace" => {
-            if args.len() != 2 {
-                return Err(anyhow!("Transformation 'replace' expects exactly 2 arguments (old new), but got {}", args.len()));
-            }
-        }
-        "substring" | "pad_left" | "pad_right" => {
-            if args.is_empty() || args.len() > 2 {
-                return Err(anyhow!("Transformation '{}' expects 1 or 2 arguments, but got {}", op, args.len()));
-            }
-        }
-        _ => return Err(anyhow!("Unknown transformation: '{}'", op)),
     }
     Ok(())
 }
 
 /// Apply a single transformation to a value.
-fn apply_transformation(value: &Value, transformation: &str) -> Result<String> {
-    let parts: Vec<&str> = transformation.split_whitespace().collect();
+fn apply_transformation(value: &Value, transformation_str: &str) -> Result<String> {
+    let parts: Vec<&str> = transformation_str.split_whitespace().collect();
     if parts.is_empty() {
         return Ok(format_value(value));
     }
 
-    let operation = parts[0].to_lowercase();
+    // Parse the transformation into our Enum
+    let op = Transformation::from_str(parts[0])?;
     let args = &parts[1..];
 
     debug!(
-        "Applying transformation '{}' with args {:?} to value {:?}",
-        operation, args, value
+        "Applying transformation {:?} with args {:?} to value {:?}",
+        op, args, value
     );
 
-    match operation.as_str() {
-        // String operations
-        "upper" => Ok(string_ops::upper(&value_as_str(value))),
-        "lower" => Ok(string_ops::lower(&value_as_str(value))),
-        "title" => Ok(string_ops::title(&value_as_str(value))),
-        "strip" => Ok(string_ops::strip(&value_as_str(value))),
-        "replace" => {
-            if args.len() < 2 {
-                return Err(anyhow!("'replace' requires two arguments: old new"));
-            }
-            Ok(string_ops::replace(&value_as_str(value), args[0], args[1]))
+    // RUST COMPILER WILL ERROR HERE IF YOU FORGET A VARIANT
+    match op {
+        Transformation::Upper => Ok(string_ops::upper(&value_as_str(value))),
+        Transformation::Lower => Ok(string_ops::lower(&value_as_str(value))),
+        Transformation::Title => Ok(string_ops::title(&value_as_str(value))),
+        Transformation::Strip => Ok(string_ops::strip(&value_as_str(value))),
+        Transformation::Replace => {
+            let old = args.first().ok_or_else(|| anyhow!("Missing 'old' arg"))?;
+            let new = args.get(1).ok_or_else(|| anyhow!("Missing 'new' arg"))?;
+            Ok(string_ops::replace(&value_as_str(value), old, new))
         }
-        "split" => {
+        Transformation::Split => {
             let delimiter = args.first().copied().unwrap_or(",");
             let parts = string_ops::split(&value_as_str(value), delimiter);
             Ok(serde_json::to_string(&parts).unwrap_or_default())
         }
-        "substring" => {
-            let start: usize = args.first().and_then(|a| a.parse().ok()).unwrap_or(0);
+        Transformation::Substring => {
+            let start: usize = args
+                .first()
+                .and_then(|a| a.parse().ok())
+                .ok_or_else(|| anyhow!("Invalid start index"))?;
             let end: Option<usize> = args.get(1).and_then(|a| a.parse().ok());
             Ok(string_ops::substring(&value_as_str(value), start, end))
         }
-        "pad_left" => {
-            let width: usize = args.first().and_then(|a| a.parse().ok()).unwrap_or(10);
+        Transformation::PadLeft => {
+            let width: usize = args
+                .first()
+                .and_then(|a| a.parse().ok())
+                .ok_or_else(|| anyhow!("Invalid width"))?;
             let fill = args.get(1).and_then(|a| a.chars().next()).unwrap_or('0');
             Ok(string_ops::pad_left(&value_as_str(value), width, fill))
         }
-        "pad_right" => {
-            let width: usize = args.first().and_then(|a| a.parse().ok()).unwrap_or(10);
+        Transformation::PadRight => {
+            let width: usize = args
+                .first()
+                .and_then(|a| a.parse().ok())
+                .ok_or_else(|| anyhow!("Invalid width"))?;
             let fill = args.get(1).and_then(|a| a.chars().next()).unwrap_or('0');
             Ok(string_ops::pad_right(&value_as_str(value), width, fill))
         }
-
-        // Number operations
-        "add" => {
+        Transformation::Add => {
             let amount = parse_num_arg(args, 0, "add")?;
             Ok(format_number(number_ops::add(value_as_f64(value)?, amount)))
         }
-        "subtract" => {
+        Transformation::Subtract => {
             let amount = parse_num_arg(args, 0, "subtract")?;
             Ok(format_number(number_ops::subtract(
                 value_as_f64(value)?,
                 amount,
             )))
         }
-        "multiply" => {
+        Transformation::Multiply => {
             let factor = parse_num_arg(args, 0, "multiply")?;
             Ok(format_number(number_ops::multiply(
                 value_as_f64(value)?,
                 factor,
             )))
         }
-        "divide" => {
+        Transformation::Divide => {
             let divisor = parse_num_arg(args, 0, "divide")?;
             Ok(format_number(number_ops::divide(
                 value_as_f64(value)?,
                 divisor,
             )?))
         }
-        "round_to" => {
+        Transformation::RoundTo => {
             let decimals: u32 = args.first().and_then(|a| a.parse().ok()).unwrap_or(0);
             Ok(format_number(number_ops::round_to(
                 value_as_f64(value)?,
                 decimals,
             )))
         }
-        "abs_value" => Ok(format_number(number_ops::abs_value(value_as_f64(value)?))),
-        "power" => {
+        Transformation::AbsValue => Ok(format_number(number_ops::abs_value(value_as_f64(value)?))),
+        Transformation::Power => {
             let exponent = parse_num_arg(args, 0, "power")?;
             Ok(format_number(number_ops::power(
                 value_as_f64(value)?,
                 exponent,
             )))
         }
-        "sqrt" => Ok(format_number(number_ops::sqrt(value_as_f64(value)?)?)),
-        "floor" => Ok(format_number(number_ops::floor(value_as_f64(value)?))),
-        "ceil" => Ok(format_number(number_ops::ceil(value_as_f64(value)?))),
-        "mod" => {
+        Transformation::Sqrt => Ok(format_number(number_ops::sqrt(value_as_f64(value)?)?)),
+        Transformation::Floor => Ok(format_number(number_ops::floor(value_as_f64(value)?))),
+        Transformation::Ceil => Ok(format_number(number_ops::ceil(value_as_f64(value)?))),
+        Transformation::Mod => {
             let divisor = parse_num_arg(args, 0, "mod")?;
             Ok(format_number(number_ops::modulo(
                 value_as_f64(value)?,
                 divisor,
             )))
-        }
-
-        _ => {
-            error!("Unknown transformation: {}", operation);
-            Err(anyhow!("Unknown transformation: {}", operation))
         }
     }
 }
@@ -226,7 +322,7 @@ fn parse_num_arg(args: &[&str], index: usize, op_name: &str) -> Result<f64> {
 
 /// Format a float, removing trailing `.0` for whole numbers.
 fn format_number(number: f64) -> String {
-    if number == number.trunc() && number.abs() < i64::MAX as f64 {
+    if (number - number.trunc()).abs() < f64::EPSILON && number.abs() < i64::MAX as f64 {
         format!("{}", number as i64)
     } else {
         format!("{number}")
@@ -283,15 +379,12 @@ mod tests {
 
     #[test]
     fn test_validator_wrong_args() {
-        // upper expects 0, gets 1
         let err = validate_template("{name upper something}").unwrap_err();
-        assert!(err.to_string().contains("expects 0 arguments"));
+        assert!(err.to_string().contains("expects exactly 0 arguments"));
 
-        // add expects 1, gets 2
         let err = validate_template("{age add 10 20}").unwrap_err();
         assert!(err.to_string().contains("expects exactly 1 argument"));
 
-        // replace expects 2, gets 1
         let err = validate_template("{name replace john}").unwrap_err();
         assert!(err.to_string().contains("expects exactly 2 arguments"));
     }
