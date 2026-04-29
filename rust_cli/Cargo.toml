@@ -1,6 +1,6 @@
 [package]
 name = "ddbm"
-version = "2.0.1"
+version = "2.1.0"
 edition = "2021"
 description = "A powerful CLI tool for migrating data between DynamoDB tables with template transformations, state management, and rollback support."
 license = "Apache-2.0"
