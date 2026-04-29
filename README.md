@@ -22,7 +22,7 @@ Available as both a **cross-platform Rust CLI** (optimized for speed) and a **Py
 Both implementations use the same template syntax for mapping source columns to target columns.
 
 ### Basic Syntax
-Templates are defined as strings with placeholders: `"{column_name} {transformation}"`.
+Templates are defined as strings with placeholders: `"{column_name transformation}"`.
 
 ### Available Transformations
 
