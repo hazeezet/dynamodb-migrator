@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 ![Version](https://img.shields.io/github/v/release/hazeezet/dynamodb-migrator?label=CLI%20Version&color=blue)
-![Build](https://img.shields.io/github/actions/workflow/status/hazeezet/dynamodb-migrator/release.yml?branch=main&label=Build)
+![Build](https://img.shields.io/github/actions/workflow/status/hazeezet/dynamodb-migrator/release.yml?label=Build)
 
 A powerful, high-performance tool for migrating data between DynamoDB tables with advanced template transformations, atomic state management, and full rollback capabilities.
 
@@ -119,6 +119,14 @@ If you installed via Cargo:
 ```bash
 cargo uninstall ddbm
 ```
+
+---
+
+## Contributing
+
+Contributions are welcome! Whether it's reporting a bug, suggesting a feature, or submitting a pull request, we appreciate your help.
+
+Please see our [**Contributing Guide**](CONTRIBUTING.md) for more information on how to get started.
 
 ---
 

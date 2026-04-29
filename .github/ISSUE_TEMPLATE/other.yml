@@ -1,0 +1,16 @@
+name: Other
+description: For anything else that doesn't fit the other templates
+title: "[OTHER] "
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please describe your question, topic, or feedback.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other relevant information here.
