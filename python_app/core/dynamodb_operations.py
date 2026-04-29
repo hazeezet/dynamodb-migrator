@@ -229,13 +229,10 @@ def execute_batch_write(table_name, write_requests):
             execute_batch_write(table_name, unprocessed[table_name])
 
     except ClientError as e:
-
         logger.error(f"Batch Write Error: {e}")
-
         print(f"Batch Write Error: {e}")
-
+        raise e
     except Exception as e:
-
         logger.error(f"Unexpected Batch Write Error: {e}")
-
         print(f"Unexpected Batch Write Error: {e}")
+        raise e

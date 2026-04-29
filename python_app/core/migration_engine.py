@@ -2,7 +2,8 @@ import boto3
 import re
 import sys
 import traceback
-from botocore.exceptions import NoCredentialsError
+import logging
+from botocore.exceptions import ClientError, NoCredentialsError, EndpointConnectionError
 from .state_manager import save_state, load_undo_state, save_undo_state
 from .dynamodb_operations import get_table_key_schema, execute_batch_write
 from .utils.converters import convert_to_dynamodb_type
@@ -39,18 +40,21 @@ def process_record(item, migration_config):
                     pure_placeholder_match = re.fullmatch(r"\{(\w+)\}", template)
                     if pure_placeholder_match:
                         placeholder = pure_placeholder_match.group(1)
-                        new_item[target_col] = item.get(placeholder, None)
+                        value = item.get(placeholder, None)
+                        new_item[target_col] = value
                         continue
 
                 # Handle complex templates (using template_processor)
                 if isinstance(template, str) and "{" in template:
                     new_item[target_col] = apply_template(template, item)
                 else:
-                    # Direct value
+                    # Direct value (numbers, booleans, etc.)
                     new_item[target_col] = template
 
             except Exception as e:
                 logger.error(f"Error processing column '{target_col}': {e}")
+                logger.error(f"Error traceback: {traceback.format_exc()}")
+                raise e
 
     return new_item
 
@@ -63,12 +67,22 @@ def migrate_data(state, migration):
         source_table = dynamodb.Table(migration["source_table"])
         target_table = dynamodb.Table(migration["target_table"])
     except NoCredentialsError:
-        logger.error("AWS credentials not found.")
+        logger.error(
+            "AWS credentials not found. Please configure your AWS credentials."
+        )
+        print("AWS credentials not found. Please configure your AWS credentials.")
+        migration["status"] = "error"
+        save_state(state)
+        sys.exit(1)
+    except ClientError as e:
+        logger.error(f"Failed to connect to DynamoDB: {e}")
+        print(f"Failed to connect to DynamoDB: {e}")
         migration["status"] = "error"
         save_state(state)
         sys.exit(1)
     except Exception as e:
-        logger.error(f"Failed to connect: {e}")
+        logger.error(f"Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
         migration["status"] = "error"
         save_state(state)
         sys.exit(1)
@@ -99,7 +113,7 @@ def migrate_data(state, migration):
         for page in response_iterator:
             items = page.get("Items", [])
             for item in items:
-                # USE THE CORE LOGIC FUNCTION
+                # Apply transformations
                 new_item = process_record(item, migration)
 
                 # Format the item for DynamoDB
@@ -120,35 +134,56 @@ def migrate_data(state, migration):
                         key[key_name] = {"S": ""}
 
                 undo_keys.append(key)
-                total_items += 1
 
-                if len(write_requests) >= batch_size:
-                    execute_batch_write(target_table, write_requests)
+                if len(write_requests) == batch_size:
+                    execute_batch_write(target_table.name, write_requests)
                     write_requests = []
+                    total_items += batch_size
                     migration["processed_items"] = total_items
                     save_state(state)
                     save_undo_state(undo_state)
                     print(f"Processed {total_items} items...", end="\r")
 
-            # Save progress after each page
+            # Save pagination state
             if page.get("LastEvaluatedKey"):
                 migration["last_evaluated_key"] = page["LastEvaluatedKey"]
-                save_state(state)
+            else:
+                migration["last_evaluated_key"] = None
+            save_state(state)
 
         # Final batch
         if write_requests:
-            execute_batch_write(target_table, write_requests)
+            execute_batch_write(target_table.name, write_requests)
+            total_items += len(write_requests)
+            migration["processed_items"] = total_items
+            migration["last_evaluated_key"] = None
+            save_state(state)
 
         migration["status"] = "completed"
         migration["processed_items"] = total_items
         save_state(state)
         save_undo_state(undo_state)
 
-        print(f"\nMigration completed! Processed {total_items} items.")
+        print(
+            f"\nMigration completed successfully. Total items migrated: {total_items}"
+        )
+        logger.info(
+            f"Migration '{mig_id}' completed successfully. Total items migrated: {total_items}"
+        )
 
+    except EndpointConnectionError as e:
+        logger.error(f"Connection Error: {e}")
+        print(f"Connection Error: {e}")
+        migration["status"] = "error"
+        save_state(state)
+    except ClientError as e:
+        logger.error(f"DynamoDB Client Error: {e}")
+        print(f"DynamoDB Client Error: {e}")
+        migration["status"] = "error"
+        save_state(state)
     except Exception as e:
-        logger.error(f"Migration failed: {e}")
-        traceback.print_exc()
+        logger.error(f"Migration Error: {e}")
+        print(f"Migration Error: {e}")
         migration["status"] = "error"
         save_state(state)
         sys.exit(1)
