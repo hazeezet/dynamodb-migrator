@@ -1,6 +1,6 @@
 import boto3
 import sys
-from botocore.exceptions import ClientError, NoCredentialsError
+from botocore.exceptions import ClientError
 from .utils.logger import get_logger
 
 logger = get_logger()

@@ -39,7 +39,8 @@ jobs:
         working-directory: python_app
         run: |
           pip install -r requirements.txt
-          pytest tests/
+          flake8 . --count --select=E9,F63,F7,F82,F401 --show-source --statistics
+          python -m pytest tests/
 
   build:
     name: Build ${{ matrix.target }}

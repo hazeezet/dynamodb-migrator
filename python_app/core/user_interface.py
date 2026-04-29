@@ -95,7 +95,9 @@ def edit_migration(migration):
         )
 
         if add_mapping == "yes":
-            mapping = input("Enter column mapping (format: target_column=template): ").strip()
+            mapping = input(
+                "Enter column mapping (format: target_column=template): "
+            ).strip()
             if "=" not in mapping:
                 print("Invalid format. Please use 'target_column=template'.")
                 continue
@@ -107,6 +109,7 @@ def edit_migration(migration):
             if target_column and template:
                 # Robust validation
                 from .utils.template_processor import validate_template
+
                 try:
                     validate_template(template)
                     migration["column_mappings"][target_column] = template
@@ -180,11 +183,17 @@ def get_user_input():
                 )
 
         elif mapping_type == "2":
-            print("\nDefine your column mappings using the format: target_column=template")
+            print(
+                "\nDefine your column mappings using the format: target_column=template"
+            )
             print("Examples:")
             print("  name={first} {last}             (Combine columns)")
-            print("  email={email lower}             (Transformations: lower, upper, title, trim)")
-            print("  tag=USER-{id upper}             (Combine constant text with transformed column)")
+            print(
+                "  email={email lower}             (Transformations: lower, upper, title, trim)"
+            )
+            print(
+                "  tag=USER-{id upper}             (Combine constant text with transformed column)"
+            )
             print("  status=ACTIVE                   (Set constant value)")
             print("Enter 'done' when finished.\n")
 
@@ -202,11 +211,14 @@ def get_user_input():
                 template = template.strip()
 
                 if not target_column or not template:
-                    print("Invalid mapping. Target column and template cannot be empty.")
+                    print(
+                        "Invalid mapping. Target column and template cannot be empty."
+                    )
                     continue
 
                 # Robust validation
                 from .utils.template_processor import validate_template
+
                 try:
                     validate_template(template)
                     column_mappings[target_column] = template
@@ -216,10 +228,14 @@ def get_user_input():
 
         else:
             print("Invalid choice. Defaulting to specific column mappings.")
-            print("\nDefine your column mappings using the format: target_column=template")
+            print(
+                "\nDefine your column mappings using the format: target_column=template"
+            )
             print("Examples:")
             print("  name={first} {last}             (Combine columns)")
-            print("  email={email lower}             (Transformations: lower, upper, title, trim)")
+            print(
+                "  email={email lower}             (Transformations: lower, upper, title, trim)"
+            )
             print("  status=ACTIVE                   (Set constant value)")
             print("Enter 'done' when finished.\n")
 
@@ -237,11 +253,14 @@ def get_user_input():
                 template = template.strip()
 
                 if not target_column or not template:
-                    print("Invalid mapping. Target column and template cannot be empty.")
+                    print(
+                        "Invalid mapping. Target column and template cannot be empty."
+                    )
                     continue
 
                 # Robust validation
                 from .utils.template_processor import validate_template
+
                 try:
                     validate_template(template)
                     column_mappings[target_column] = template

@@ -1,6 +1,5 @@
 import json
 import sys
-import logging
 from .config import STATE_FILE, UNDO_FILE
 from .utils.logger import get_logger
 
