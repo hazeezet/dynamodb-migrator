@@ -234,7 +234,10 @@ mod tests {
         item.insert("age".to_string(), json!(30));
 
         let mut mappings = HashMap::new();
-        mappings.insert("full_name".to_string(), json!("{first_name title} {last_name title}"));
+        mappings.insert(
+            "full_name".to_string(),
+            json!("{first_name title} {last_name title}"),
+        );
         mappings.insert("years".to_string(), json!("{age}"));
         mappings.insert("static".to_string(), json!("fixed_value"));
 
