@@ -137,7 +137,7 @@ Requires dependencies:
 ```bash
 cd python_app
 pip install -r requirements.txt
-pytest tests/
+python -m pytest tests/
 ```
 
 ---

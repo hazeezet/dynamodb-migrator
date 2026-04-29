@@ -39,6 +39,16 @@ The Python version follows the same subcommand structure as the Rust CLI.
 python run.py migrate --source UsersOld --target UsersNew --passthrough
 ```
 
+## Testing
+
+We use `pytest` for automated testing.
+```bash
+# Ensure venv is active
+python -m pytest tests/
+```
+
+---
+
 ## Reference
 - **Transformations**: For details on the `{placeholder}` syntax and available functions, see the [Root README](../README.md#transformation-engine).
 - **Core Logic**: For internal module documentation, see [core/README.md](core/README.md).

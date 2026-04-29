@@ -202,6 +202,67 @@ pub async fn run_migration(
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_passthrough_with_exclusions() {
+        let mut item = serde_json::Map::new();
+        item.insert("id".to_string(), json!("123"));
+        item.insert("secret".to_string(), json!("password"));
+        item.insert("public".to_string(), json!("hello"));
+
+        let mut mappings = HashMap::new();
+        mappings.insert("__PASSTHROUGH__".to_string(), json!("true"));
+        mappings.insert("__EXCLUDE__".to_string(), json!(["secret"]));
+
+        let result = apply_column_mappings(&mappings, &item).unwrap();
+
+        assert_eq!(result.get("id").unwrap(), "123");
+        assert_eq!(result.get("public").unwrap(), "hello");
+        assert!(result.get("secret").is_none());
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn test_specific_mappings() {
+        let mut item = serde_json::Map::new();
+        item.insert("first_name".to_string(), json!("john"));
+        item.insert("last_name".to_string(), json!("doe"));
+        item.insert("age".to_string(), json!(30));
+
+        let mut mappings = HashMap::new();
+        mappings.insert("full_name".to_string(), json!("{first_name title} {last_name title}"));
+        mappings.insert("years".to_string(), json!("{age}"));
+        mappings.insert("static".to_string(), json!("fixed_value"));
+
+        let result = apply_column_mappings(&mappings, &item).unwrap();
+
+        assert_eq!(result.get("full_name").unwrap(), "John Doe");
+        assert_eq!(result.get("years").unwrap(), 30);
+        assert_eq!(result.get("static").unwrap(), "fixed_value");
+        assert_eq!(result.len(), 3);
+    }
+
+    #[test]
+    fn test_passthrough_disabled() {
+        let mut item = serde_json::Map::new();
+        item.insert("id".to_string(), json!("123"));
+        item.insert("other".to_string(), json!("data"));
+
+        let mut mappings = HashMap::new();
+        mappings.insert("id_copy".to_string(), json!("{id}"));
+
+        let result = apply_column_mappings(&mappings, &item).unwrap();
+
+        assert_eq!(result.get("id_copy").unwrap(), "123");
+        assert!(result.get("id").is_none());
+        assert!(result.get("other").is_none());
+    }
+}
+
 /// Apply column mappings to a source item.
 fn apply_column_mappings(
     mappings: &HashMap<String, Value>,

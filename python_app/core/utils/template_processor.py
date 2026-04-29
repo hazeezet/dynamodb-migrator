@@ -89,6 +89,9 @@ def _format_value(value):
     elif value is None:
         return 'null'
     elif isinstance(value, numbers.Number):
+        # Format numbers to remove trailing .0 if they are whole numbers
+        if float(value).is_integer():
+            return str(int(value))
         return str(value)
     elif isinstance(value, str):
         return value.replace('"', '\\"')

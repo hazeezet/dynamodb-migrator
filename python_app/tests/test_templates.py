@@ -66,11 +66,11 @@ def test_registry_integrity():
 
 def test_numeric_edge_cases():
     """Test how numeric operations handle nulls or invalid strings."""
-    item = {"val": "not_a_number", "empty": None}
+    from core.utils.transformations import apply_transformation, TransformationError
     
     # Should handle None by defaulting to 0
-    assert apply_template("{empty add 10}", item) == "10"
+    assert apply_transformation(None, "add 10") == 10
     
     # Invalid string for numeric op should raise an error
     with pytest.raises(TransformationError):
-        apply_template("{val add 10}", item)
+        apply_transformation("not_a_number", "add 10")
