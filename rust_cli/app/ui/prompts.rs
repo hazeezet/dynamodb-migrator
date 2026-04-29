@@ -147,7 +147,31 @@ pub fn get_migration_input() -> Result<(String, String, HashMap<String, Value>)>
         // Specific mappings
         println!(
             "  {}",
-            style("Format: target_column=template (e.g., name={firstName} {lastName})").dim()
+            style("Format: target_column=template").dim()
+        );
+        println!(
+            "  {}",
+            style("Examples:").dim()
+        );
+        println!(
+            "    {}  {}",
+            style("name={first} {last}").cyan(),
+            style("(Combine columns)").dim()
+        );
+        println!(
+            "    {}  {}",
+            style("email={email lower}").cyan(),
+            style("(Apply transformations: lower, upper, title, trim)").dim()
+        );
+        println!(
+            "    {}  {}",
+            style("tag=USER-{id upper}").cyan(),
+            style("(Combine constant text with transformed column)").dim()
+        );
+        println!(
+            "    {}  {}",
+            style("status=ACTIVE").cyan(),
+            style("(Set constant value)").dim()
         );
         println!("  {}", style("Enter 'done' when finished.").dim());
 
@@ -157,11 +181,12 @@ pub fn get_migration_input() -> Result<(String, String, HashMap<String, Value>)>
                 .interact_text()
                 .context("Mapping input cancelled")?;
 
-            if mapping.trim().to_lowercase() == "done" {
+            let mapping_trimmed = mapping.trim();
+            if mapping_trimmed.to_lowercase() == "done" {
                 break;
             }
 
-            if !mapping.contains('=') {
+            if !mapping_trimmed.contains('=') {
                 println!(
                     "  {}",
                     style("Invalid format. Use: target_column=template").red()
@@ -169,7 +194,7 @@ pub fn get_migration_input() -> Result<(String, String, HashMap<String, Value>)>
                 continue;
             }
 
-            let (target, template) = mapping.split_once('=').unwrap();
+            let (target, template) = mapping_trimmed.split_once('=').unwrap();
             let target = target.trim();
             let template = template.trim();
 
@@ -177,6 +202,17 @@ pub fn get_migration_input() -> Result<(String, String, HashMap<String, Value>)>
                 println!(
                     "  {}",
                     style("Both target column and template are required.").red()
+                );
+                continue;
+            }
+
+            // Robust validation
+            use crate::app::transform::template::validate_template;
+            if let Err(e) = validate_template(template) {
+                println!(
+                    "  {} {}",
+                    style("Invalid template:").red(),
+                    style(e).red()
                 );
                 continue;
             }

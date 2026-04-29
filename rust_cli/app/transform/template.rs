@@ -1,26 +1,8 @@
-/// Template processor for column mapping transformations.
-///
-/// Parses templates like `{field_name}` and `{field_name operation args...}`,
-/// resolves values from the source DynamoDB item, and applies transformations.
-use anyhow::{anyhow, Result};
-use regex::Regex;
-use serde_json::Value;
-use tracing::{debug, error};
-
-use super::{number_ops, string_ops};
-
 /// Apply a template string against a source item.
-///
-/// Supports:
-/// - Simple placeholders: `{field_name}`
-/// - Transformations: `{field_name transformation args...}`
-///
-/// # Examples
-/// - `{id}` → direct field value
-/// - `{id upper}` → uppercase
-/// - `{price add 10}` → add 10 to price
-/// - `{name replace John Jane}` → replace John with Jane
 pub fn apply_template(template: &str, item: &serde_json::Map<String, Value>) -> Result<String> {
+    // First validate the template structure
+    validate_template(template)?;
+
     let template_regex = Regex::new(r"\{([^}]+)\}").expect("invalid regex");
     let mut result = template.to_string();
 
@@ -48,6 +30,59 @@ pub fn apply_template(template: &str, item: &serde_json::Map<String, Value>) -> 
     }
 
     Ok(result)
+}
+
+/// Validate a template string for syntax and transformation rules.
+pub fn validate_template(template: &str) -> Result<()> {
+    // 1. Basic balanced bracket check
+    let open_count = template.chars().filter(|&c| c == '{').count();
+    let close_count = template.chars().filter(|&c| c == '}').count();
+    if open_count != close_count {
+        return Err(anyhow!("Brackets are not balanced. Ensure every '{{' has a closing '}}'."));
+    }
+
+    let template_regex = Regex::new(r"\{([^}]+)\}").expect("invalid regex");
+    for template_match in template_regex.captures_iter(template) {
+        let content = template_match.get(1).unwrap().as_str().trim();
+        let parts: Vec<&str> = content.split_whitespace().collect();
+        
+        if parts.len() > 1 {
+            let op = parts[1].to_lowercase();
+            let args = &parts[2..];
+            validate_operation(&op, args)?;
+        }
+    }
+
+    Ok(())
+}
+
+/// Verify that an operation is supported and has the correct number of arguments.
+fn validate_operation(op: &str, args: &[&str]) -> Result<()> {
+    match op {
+        // String operations
+        "upper" | "lower" | "title" | "strip" | "abs_value" | "sqrt" | "floor" | "ceil" => {
+            if !args.is_empty() {
+                return Err(anyhow!("Transformation '{}' expects 0 arguments, but got {}", op, args.len()));
+            }
+        }
+        "split" | "add" | "subtract" | "multiply" | "divide" | "power" | "mod" | "round_to" => {
+            if args.len() != 1 {
+                return Err(anyhow!("Transformation '{}' expects exactly 1 argument, but got {}", op, args.len()));
+            }
+        }
+        "replace" => {
+            if args.len() != 2 {
+                return Err(anyhow!("Transformation 'replace' expects exactly 2 arguments (old new), but got {}", args.len()));
+            }
+        }
+        "substring" | "pad_left" | "pad_right" => {
+            if args.is_empty() || args.len() > 2 {
+                return Err(anyhow!("Transformation '{}' expects 1 or 2 arguments, but got {}", op, args.len()));
+            }
+        }
+        _ => return Err(anyhow!("Unknown transformation: '{}'", op)),
+    }
+    Ok(())
 }
 
 /// Apply a single transformation to a value.
@@ -224,6 +259,41 @@ mod tests {
             "description": "This is a test description"
         });
         obj.as_object().unwrap().clone()
+    }
+
+    #[test]
+    fn test_validator_success() {
+        assert!(validate_template("{name upper}").is_ok());
+        assert!(validate_template("{age add 10}").is_ok());
+        assert!(validate_template("{name replace a b}").is_ok());
+        assert!(validate_template("Static {id} text").is_ok());
+    }
+
+    #[test]
+    fn test_validator_unbalanced_brackets() {
+        let err = validate_template("{name upper").unwrap_err();
+        assert!(err.to_string().contains("balanced"));
+    }
+
+    #[test]
+    fn test_validator_unknown_op() {
+        let err = validate_template("{name magic}").unwrap_err();
+        assert!(err.to_string().contains("Unknown transformation"));
+    }
+
+    #[test]
+    fn test_validator_wrong_args() {
+        // upper expects 0, gets 1
+        let err = validate_template("{name upper something}").unwrap_err();
+        assert!(err.to_string().contains("expects 0 arguments"));
+
+        // add expects 1, gets 2
+        let err = validate_template("{age add 10 20}").unwrap_err();
+        assert!(err.to_string().contains("expects exactly 1 argument"));
+
+        // replace expects 2, gets 1
+        let err = validate_template("{name replace john}").unwrap_err();
+        assert!(err.to_string().contains("expects exactly 2 arguments"));
     }
 
     #[test]

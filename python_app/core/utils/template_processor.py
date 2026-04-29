@@ -7,23 +7,57 @@ from .transformations import apply_transformation, TransformationError
 logger = get_logger()
 
 
+def validate_template(template):
+    """
+    Validate template string for syntax and transformation rules.
+    """
+    # 1. Balanced brackets check
+    if template.count('{') != template.count('}'):
+        raise ValueError("Brackets are not balanced. Ensure every '{' has a closing '}'.")
+
+    # 2. Extract and validate each placeholder
+    placeholder_pattern = r'\{([^}]+)\}'
+    placeholders = re.findall(placeholder_pattern, template)
+    
+    for content in placeholders:
+        parts = content.strip().split()
+        if len(parts) > 1:
+            op = parts[1].lower()
+            args = parts[2:]
+            _validate_operation(op, args)
+    
+    return True
+
+def _validate_operation(op, args):
+    """Verify operation and argument counts."""
+    # Define registry: op_name -> (min_args, max_args)
+    registry = {
+        "upper": (0, 0), "lower": (0, 0), "title": (0, 0), "strip": (0, 0),
+        "abs_value": (0, 0), "sqrt": (0, 0), "floor": (0, 0), "ceil": (0, 0),
+        "split": (1, 1), "add": (1, 1), "subtract": (1, 1), "multiply": (1, 1),
+        "divide": (1, 1), "power": (1, 1), "mod": (1, 1), "round_to": (1, 1),
+        "replace": (2, 2), "substring": (1, 2), "pad_left": (1, 2), "pad_right": (1, 2),
+        "join": (1, 1)
+    }
+    
+    if op not in registry:
+        raise ValueError(f"Unknown transformation: '{op}'")
+    
+    min_args, max_args = registry[op]
+    if len(args) < min_args or len(args) > max_args:
+        if min_args == max_args:
+            raise ValueError(f"Transformation '{op}' expects exactly {min_args} arguments, but got {len(args)}")
+        else:
+            raise ValueError(f"Transformation '{op}' expects {min_args} to {max_args} arguments, but got {len(args)}")
+
 def apply_template(template, item):
     """
     Apply template with placeholders and transformations to item data.
-    
-    Supports:
-    - Simple placeholders: {field_name}
-    - Transformations: {field_name transformation}
-    
-    Examples:
-    - {id} -> direct field value
-    - {id upper} -> uppercase transformation
-    - {price add 10} -> add 10 to price
-    - {name replace John Jane} -> replace John with Jane
     """
+    # First validate
+    validate_template(template)
+    
     try:
-        # Enhanced regex to capture placeholder and optional transformation
-        # Pattern: {field_name optional_transformation}
         placeholder_pattern = r'\{([^}]+)\}'
         placeholders = re.findall(placeholder_pattern, template)
         
@@ -40,10 +74,8 @@ def apply_template(template, item):
             if transformation:
                 try:
                     value = apply_transformation(value, transformation)
-                    logger.info(f"Applied transformation '{transformation}' to field '{field_name}': {value}")
                 except TransformationError as e:
                     logger.error(f"Transformation error for field '{field_name}': {e}")
-                    # Continue with original value if transformation fails
             
             # Convert value to appropriate format
             replacement = _format_value(value)
@@ -64,11 +96,36 @@ def _format_value(value):
     if isinstance(value, (dict, list)):
         return value  # Keep as dict or list
     elif value is None:
-        return 'null'  # Replace None with 'null' for JSON compatibility
+        return 'null'
     elif isinstance(value, numbers.Number):
-        return str(value)  # Preserve original data types (int, float, Decimal)
+        return str(value)
     elif isinstance(value, str):
-        # Escape quotes for strings
         return value.replace('"', '\\"')
     else:
         return str(value)
+
+# Tests
+def test_validator():
+    # Success cases
+    assert validate_template("{name upper}") is True
+    assert validate_template("{age add 10}") is True
+    assert validate_template("USER#{id upper}") is True
+    
+    # Failure cases
+    try:
+        validate_template("{name upper something}")
+        assert False, "Should have failed: too many args"
+    except ValueError as e:
+        assert "expects 0 arguments" in str(e)
+        
+    try:
+        validate_template("{age add 10 20}")
+        assert False, "Should have failed: too many args"
+    except ValueError as e:
+        assert "exactly 1 argument" in str(e)
+
+    try:
+        validate_template("{id magic}")
+        assert False, "Should have failed: unknown op"
+    except ValueError as e:
+        assert "Unknown transformation" in str(e)
