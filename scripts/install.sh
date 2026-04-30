@@ -11,16 +11,17 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}==>${NC} Installing ddbm..."
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Check if binaries exist in the current directory
-if [[ ! -f "ddbm" ]] || [[ ! -f "dynamodb-migrator" ]]; then
-    echo "Error: ddbm or dynamodb-migrator binary not found in current directory."
+# Check if binaries exist in the script's directory
+if [[ ! -f "$SCRIPT_DIR/ddbm" ]] || [[ ! -f "$SCRIPT_DIR/dynamodb-migrator" ]]; then
+    echo "Error: ddbm or dynamodb-migrator binary not found in $SCRIPT_DIR."
     exit 1
 fi
 
-BINARY="ddbm"
-ALIAS="dynamodb-migrator"
+BINARY="$SCRIPT_DIR/ddbm"
+ALIAS="$SCRIPT_DIR/dynamodb-migrator"
 
 # Move binaries
 echo -e "${BLUE}==>${NC} Moving binaries to ${INSTALL_DIR} (requires sudo)..."
